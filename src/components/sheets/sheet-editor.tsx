@@ -13,7 +13,11 @@ import {
   Download,
   ChevronDown,
   Check,
+  Table,
+  BarChart3,
+  LayoutGrid,
 } from "lucide-react";
+import { ChartGrid } from "./chart-grid";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -50,6 +54,7 @@ export function SheetEditor({ parsedFile, onBack }: SheetEditorProps) {
     col: number;
   } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [viewMode, setViewMode] = useState<"table" | "charts" | "both">("both");
 
   const loadFromParsed = useCallback(
     (sheetIndex: number) => {
@@ -336,6 +341,42 @@ export function SheetEditor({ parsedFile, onBack }: SheetEditorProps) {
             </DropdownMenu>
           )}
 
+          <div className="flex items-center rounded-lg border border-white/10 bg-white/[0.03] p-0.5">
+            <button
+              onClick={() => setViewMode("table")}
+              className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs transition-colors ${
+                viewMode === "table"
+                  ? "bg-white/10 text-cyan-400"
+                  : "text-zinc-500 hover:text-zinc-300"
+              }`}
+            >
+              <Table className="h-3.5 w-3.5" />
+              Tabel
+            </button>
+            <button
+              onClick={() => setViewMode("charts")}
+              className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs transition-colors ${
+                viewMode === "charts"
+                  ? "bg-white/10 text-cyan-400"
+                  : "text-zinc-500 hover:text-zinc-300"
+              }`}
+            >
+              <BarChart3 className="h-3.5 w-3.5" />
+              Grafik
+            </button>
+            <button
+              onClick={() => setViewMode("both")}
+              className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs transition-colors ${
+                viewMode === "both"
+                  ? "bg-white/10 text-cyan-400"
+                  : "text-zinc-500 hover:text-zinc-300"
+              }`}
+            >
+              <LayoutGrid className="h-3.5 w-3.5" />
+              Semua
+            </button>
+          </div>
+
           <Button
             variant="ghost"
             size="sm"
@@ -374,6 +415,7 @@ export function SheetEditor({ parsedFile, onBack }: SheetEditorProps) {
         </div>
       </div>
 
+      {(viewMode === "table" || viewMode === "both") && (
       <Card className="overflow-hidden border-white/5 bg-white/[0.02] backdrop-blur-sm">
         <CardHeader className="border-b border-white/5 p-3">
           <div className="flex items-center gap-2">
@@ -495,6 +537,11 @@ export function SheetEditor({ parsedFile, onBack }: SheetEditorProps) {
           </ScrollArea>
         </CardContent>
       </Card>
+      )}
+
+      {(viewMode === "charts" || viewMode === "both") && (
+        <ChartGrid headers={headers} rows={rows} />
+      )}
     </motion.div>
   );
 }
