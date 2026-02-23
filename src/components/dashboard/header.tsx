@@ -22,7 +22,7 @@ export function Header() {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
           <Input
-            placeholder="Cari spreadsheet..."
+            placeholder="Search spreadsheet..."
             className="h-9 w-[280px] rounded-lg border-white/10 bg-white/5 pl-9 text-sm text-white placeholder:text-zinc-500 focus:border-cyan-500/50 focus:ring-cyan-500/20"
           />
         </div>
@@ -67,14 +67,14 @@ export function Header() {
             className="w-48 border-zinc-800 bg-zinc-900"
           >
             <DropdownMenuItem className="text-zinc-300 focus:bg-zinc-800 focus:text-white">
-              Profil
+              Profile
             </DropdownMenuItem>
             <DropdownMenuItem className="text-zinc-300 focus:bg-zinc-800 focus:text-white">
-              Pengaturan
+              Settings
             </DropdownMenuItem>
             <DropdownMenuSeparator className="bg-zinc-800" />
             <DropdownMenuItem className="text-red-400 focus:bg-zinc-800 focus:text-red-300">
-              Keluar
+              Logout
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

@@ -31,8 +31,8 @@ export default function HomePage() {
         </h1>
 
         <p className="mx-auto mb-10 max-w-2xl text-lg text-zinc-400">
-          Upload file Excel/CSV, edit langsung di browser, dan simpan ke Google
-          Sheets. Semua dari satu dashboard.
+          Upload Excel/CSV files, edit directly in browser, and save to Google
+          Sheets. All from one dashboard.
         </p>
 
         <div className="flex items-center justify-center gap-4">
@@ -42,7 +42,7 @@ export default function HomePage() {
             className="gap-2 bg-gradient-to-r from-cyan-500 to-blue-600 px-8 text-white shadow-xl shadow-cyan-500/20 hover:from-cyan-400 hover:to-blue-500"
           >
             <Link href="/dashboard">
-              Masuk Dashboard
+              Enter Dashboard
               <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>
@@ -53,19 +53,19 @@ export default function HomePage() {
             {
               icon: Upload,
               title: "Upload File",
-              desc: "Upload file .xlsx, .xls, atau .csv dan langsung tampilkan isinya",
+              desc: "Upload .xlsx, .xls, or .csv files and instantly view the contents",
               gradient: "from-cyan-500 to-blue-600",
             },
             {
               icon: Pencil,
               title: "Edit Inline",
-              desc: "Edit data spreadsheet langsung dari dashboard sebelum upload",
+              desc: "Edit spreadsheet data directly from the dashboard before uploading",
               gradient: "from-emerald-500 to-teal-600",
             },
             {
               icon: CloudUpload,
-              title: "Simpan ke GSheet",
-              desc: "Upload ke Google Sheets dan sinkronkan perubahan kapan saja",
+              title: "Save to GSheet",
+              desc: "Upload to Google Sheets and sync changes anytime",
               gradient: "from-violet-500 to-purple-600",
             },
           ].map((feature) => (

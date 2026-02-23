@@ -10,6 +10,13 @@ import {
   ChevronLeft,
   ChevronRight,
   Zap,
+  Users,
+  ClipboardList,
+  Search,
+  UserPlus,
+  LogIn,
+  LogOut,
+  GitBranch,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,16 +25,75 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-const navItems = [
+interface NavItem {
+  title: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+interface NavSection {
+  label?: string;
+  items: NavItem[];
+}
+
+const navSections: NavSection[] = [
   {
-    title: "Dashboard",
-    href: "/dashboard",
-    icon: LayoutDashboard,
+    items: [
+      {
+        title: "Dashboard",
+        href: "/dashboard",
+        icon: LayoutDashboard,
+      },
+    ],
   },
   {
-    title: "Pengaturan",
-    href: "/dashboard/settings",
-    icon: Settings,
+    label: "HR Pipeline",
+    items: [
+      {
+        title: "HR Overview",
+        href: "/dashboard/hr",
+        icon: GitBranch,
+      },
+      {
+        title: "Manpower",
+        href: "/dashboard/manpower",
+        icon: ClipboardList,
+      },
+      {
+        title: "Rekrutmen",
+        href: "/dashboard/recruitment",
+        icon: Search,
+      },
+      {
+        title: "Kandidat",
+        href: "/dashboard/candidates",
+        icon: UserPlus,
+      },
+      {
+        title: "Onboarding",
+        href: "/dashboard/onboarding",
+        icon: LogIn,
+      },
+      {
+        title: "Employee",
+        href: "/dashboard/employees",
+        icon: Users,
+      },
+      {
+        title: "Offboarding",
+        href: "/dashboard/offboarding",
+        icon: LogOut,
+      },
+    ],
+  },
+  {
+    items: [
+      {
+        title: "Pengaturan",
+        href: "/dashboard/settings",
+        icon: Settings,
+      },
+    ],
   },
 ];
 
@@ -58,44 +124,68 @@ export function Sidebar() {
         )}
       </div>
 
-      <nav className="flex-1 space-y-1 p-3">
-        {navItems.map((item) => {
-          const isActive = pathname === item.href;
+      <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+        {navSections.map((section, sIdx) => (
+          <div key={sIdx} className={sIdx > 0 ? "mt-4" : ""}>
+            {section.label && !collapsed && (
+              <div className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-widest text-zinc-500">
+                {section.label}
+              </div>
+            )}
+            {section.label && collapsed && (
+              <div className="mb-2 border-t border-white/5" />
+            )}
+            <div className="space-y-1">
+              {section.items.map((item) => {
+                const isActive =
+                  item.href === "/dashboard"
+                    ? pathname === item.href
+                    : pathname.startsWith(item.href);
 
-          const navLink = (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
-                isActive
-                  ? "bg-gradient-to-r from-cyan-500/15 to-blue-500/10 text-cyan-400 shadow-sm shadow-cyan-500/5"
-                  : "text-zinc-400 hover:bg-white/5 hover:text-white"
-              )}
-            >
-              <item.icon
-                className={cn(
-                  "h-4.5 w-4.5 shrink-0 transition-colors",
-                  isActive ? "text-cyan-400" : "text-zinc-500 group-hover:text-zinc-300"
-                )}
-              />
-              {!collapsed && <span className="truncate">{item.title}</span>}
-            </Link>
-          );
+                const navLink = (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                      isActive
+                        ? "bg-gradient-to-r from-cyan-500/15 to-blue-500/10 text-cyan-400 shadow-sm shadow-cyan-500/5"
+                        : "text-zinc-400 hover:bg-white/5 hover:text-white"
+                    )}
+                  >
+                    <item.icon
+                      className={cn(
+                        "h-4.5 w-4.5 shrink-0 transition-colors",
+                        isActive
+                          ? "text-cyan-400"
+                          : "text-zinc-500 group-hover:text-zinc-300"
+                      )}
+                    />
+                    {!collapsed && (
+                      <span className="truncate">{item.title}</span>
+                    )}
+                  </Link>
+                );
 
-          if (collapsed) {
-            return (
-              <Tooltip key={item.href} delayDuration={0}>
-                <TooltipTrigger asChild>{navLink}</TooltipTrigger>
-                <TooltipContent side="right" className="bg-zinc-900 text-white border-zinc-800">
-                  {item.title}
-                </TooltipContent>
-              </Tooltip>
-            );
-          }
+                if (collapsed) {
+                  return (
+                    <Tooltip key={item.href} delayDuration={0}>
+                      <TooltipTrigger asChild>{navLink}</TooltipTrigger>
+                      <TooltipContent
+                        side="right"
+                        className="bg-zinc-900 text-white border-zinc-800"
+                      >
+                        {item.title}
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                }
 
-          return navLink;
-        })}
+                return navLink;
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
       <div className="border-t border-white/5 p-3">

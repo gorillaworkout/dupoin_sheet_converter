@@ -30,7 +30,7 @@ function DashboardContent() {
           Dashboard
         </h1>
         <p className="mt-1 text-sm text-zinc-500">
-          Upload file spreadsheet, edit datanya, lalu simpan
+          Upload spreadsheet file, edit data, then save
         </p>
       </div>
 
@@ -44,7 +44,7 @@ function DashboardContent() {
             Upload Spreadsheet
           </h2>
           <p className="text-sm text-zinc-500">
-            Upload file .xlsx, .xls, atau .csv untuk mulai mengedit
+            Upload .xlsx, .xls, or .csv files to start editing
           </p>
         </div>
         <FileUpload onFileParsed={handleFileParsed} />
