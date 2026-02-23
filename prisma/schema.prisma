@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model XeroToken {
+  id            Int      @id @default(1)
+  accessToken   String   @db.Text
+  refreshToken  String   @db.Text
+  expiresAt     DateTime
+  tenantId      String?
+  tenantName    String?
+  updatedAt     DateTime @updatedAt
+  @@map("xero_tokens")
+}
+
+model BalanceSheetReport {
+  id          Int      @id @default(autoincrement())
+  reportDate  String
+  fetchedAt   DateTime @default(now())
+  rawJson     Json
+  rows        BalanceSheetRow[]
+  @@map("xero_balance_sheet_reports")
+}
+
+model BalanceSheetRow {
+  id          Int      @id @default(autoincrement())
+  reportId    Int
+  report      BalanceSheetReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  section     String
+  accountName String
+  value       Decimal  @db.Decimal(18, 2)
+  period      String
+  @@map("xero_balance_sheet_rows")
+}
+
+model ProfitLossReport {
+  id          Int      @id @default(autoincrement())
+  fromDate    String
+  toDate      String
+  fetchedAt   DateTime @default(now())
+  rawJson     Json
+  rows        ProfitLossRow[]
+  @@map("xero_profit_loss_reports")
+}
+
+model ProfitLossRow {
+  id          Int      @id @default(autoincrement())
+  reportId    Int
+  report      ProfitLossReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  section     String
+  accountName String
+  value       Decimal  @db.Decimal(18, 2)
+  period      String
+  @@map("xero_profit_loss_rows")
+}
+
+model XeroTransaction {
+  id              Int      @id @default(autoincrement())
+  xeroId          String   @unique
+  date            DateTime
+  contactName     String?
+  description     String?
+  reference       String?
+  amount          Decimal  @db.Decimal(18, 2)
+  type            String
+  accountCode     String?
+  accountName     String?
+  status          String?
+  isReconciled    Boolean  @default(false)
+  rawJson         Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  @@index([date])
+  @@index([type])
+  @@map("xero_transactions")
+}
+
+model XeroAccount {
+  id          Int      @id @default(autoincrement())
+  xeroId      String   @unique
+  code        String?
+  name        String
+  type        String
+  class       String?
+  status      String?
+  updatedAt   DateTime @updatedAt
+  @@map("xero_accounts")
+}

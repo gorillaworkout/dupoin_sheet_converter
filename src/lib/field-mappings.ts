@@ -140,4 +140,7 @@ export const EMPLOYEE_FIELDS: FieldMapping[] = [
   { larkField: "Seats", ourField: "seats" },
   { larkField: "Nationality", ourField: "nationality" },
   { larkField: "City", ourField: "city" },
+  { larkField: "Marital Status", ourField: "marital_status" },
+  { larkField: "Contract Type", ourField: "contract_type" },
+  { larkField: "Education Level", ourField: "education_level" },
 ];

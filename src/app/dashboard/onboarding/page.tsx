@@ -1,15 +1,18 @@
 import type { OnboardingRecord } from "@/types/hr";
 import { OnboardingTable } from "./onboarding-table";
+import { getAllRecords, getTableId, transformGenericRecord } from "@/lib/lark";
+import { ONBOARDING_FIELDS } from "@/lib/field-mappings";
 
 export const revalidate = 0;
 
 async function getOnboarding(): Promise<OnboardingRecord[]> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-    const res = await fetch(`${baseUrl}/api/onboarding`, { cache: "no-store" });
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.records || data || [];
+    const tableId = getTableId("onboarding");
+    const records = await getAllRecords(tableId);
+    return records.map((record) => ({
+      id: record.record_id,
+      ...transformGenericRecord(record, ONBOARDING_FIELDS),
+    })) as unknown as OnboardingRecord[];
   } catch {
     return [];
   }

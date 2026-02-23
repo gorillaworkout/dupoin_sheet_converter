@@ -46,6 +46,17 @@ export async function PUT(
     const tableId = getTableId("employee");
     const body = await request.json();
     const fields = reverseTransform(body, EMPLOYEE_FIELDS);
+    
+    // Remove read-only fields that Lark won't accept writes to
+    // type 1005=autoId, 18=link, 15=email, 20=formula, 19=lookup, 11=person
+    const readOnlyFields = [
+      "UUID", "Nationality", "Work Email", "Offboarding ID", "Onboarding ID",
+      "Job Category", "Length Of Service", "Direct Manager ( Person )",
+    ];
+    for (const f of readOnlyFields) {
+      delete (fields as Record<string, unknown>)[f];
+    }
+    
     await updateRecord(tableId, id, fields);
 
     return NextResponse.json({ success: true, record_id: id });

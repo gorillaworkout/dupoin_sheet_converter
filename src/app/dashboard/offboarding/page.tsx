@@ -1,15 +1,18 @@
 import type { OffboardingRecord } from "@/types/hr";
 import { OffboardingTable } from "./offboarding-table";
+import { getAllRecords, getTableId, transformGenericRecord } from "@/lib/lark";
+import { OFFBOARDING_FIELDS } from "@/lib/field-mappings";
 
 export const revalidate = 0;
 
 async function getOffboarding(): Promise<OffboardingRecord[]> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-    const res = await fetch(`${baseUrl}/api/offboarding`, { cache: "no-store" });
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.records || data || [];
+    const tableId = getTableId("offboarding");
+    const records = await getAllRecords(tableId);
+    return records.map((record) => ({
+      id: record.record_id,
+      ...transformGenericRecord(record, OFFBOARDING_FIELDS),
+    })) as unknown as OffboardingRecord[];
   } catch {
     return [];
   }

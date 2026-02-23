@@ -1,15 +1,18 @@
 import type { Candidate } from "@/types/hr";
 import { CandidateTable } from "./candidate-table";
+import { getAllRecords, getTableId, transformGenericRecord } from "@/lib/lark";
+import { CANDIDATE_FIELDS } from "@/lib/field-mappings";
 
 export const revalidate = 0;
 
 async function getCandidates(): Promise<Candidate[]> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-    const res = await fetch(`${baseUrl}/api/candidates`, { cache: "no-store" });
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.records || data || [];
+    const tableId = getTableId("candidate");
+    const records = await getAllRecords(tableId);
+    return records.map((record) => ({
+      id: record.record_id,
+      ...transformGenericRecord(record, CANDIDATE_FIELDS),
+    })) as unknown as Candidate[];
   } catch {
     return [];
   }

@@ -3,14 +3,18 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { OnboardingRecord } from "@/types/hr";
 import { OnboardingDetailClient } from "./onboarding-detail-client";
+import { getRecord, getTableId, transformGenericRecord } from "@/lib/lark";
+import { ONBOARDING_FIELDS } from "@/lib/field-mappings";
 
 async function getOnboarding(id: string): Promise<OnboardingRecord | null> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-    const res = await fetch(`${baseUrl}/api/onboarding/${id}`, { cache: "no-store" });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.record || data || null;
+    const tableId = getTableId("onboarding");
+    const record = await getRecord(tableId, id);
+    if (!record) return null;
+    return {
+      id: record.record_id,
+      ...transformGenericRecord(record, ONBOARDING_FIELDS),
+    } as unknown as OnboardingRecord;
   } catch {
     return null;
   }

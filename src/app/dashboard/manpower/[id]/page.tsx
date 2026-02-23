@@ -1,19 +1,20 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { notFound } from "next/navigation";
 import type { ManpowerRequest } from "@/types/hr";
 import { ManpowerDetailClient } from "./manpower-detail-client";
+import { getRecord, getTableId, transformGenericRecord } from "@/lib/lark";
+import { MANPOWER_FIELDS } from "@/lib/field-mappings";
 
 async function getManpowerRequest(id: string): Promise<ManpowerRequest | null> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-    const res = await fetch(`${baseUrl}/api/manpower/${id}`, {
-      cache: "no-store",
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.record || data || null;
+    const tableId = getTableId("manpower");
+    const record = await getRecord(tableId, id);
+    if (!record) return null;
+    return {
+      id: record.record_id,
+      ...transformGenericRecord(record, MANPOWER_FIELDS),
+    } as unknown as ManpowerRequest;
   } catch {
     return null;
   }
