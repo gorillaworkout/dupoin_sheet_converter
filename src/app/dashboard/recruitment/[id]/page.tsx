@@ -3,14 +3,18 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { RecruitmentProgress } from "@/types/hr";
 import { RecruitmentDetailClient } from "./recruitment-detail-client";
+import { getRecord, getTableId, transformGenericRecord } from "@/lib/lark";
+import { RECRUITMENT_FIELDS } from "@/lib/field-mappings";
 
 async function getRecruitment(id: string): Promise<RecruitmentProgress | null> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-    const res = await fetch(`${baseUrl}/api/recruitment/${id}`, { cache: "no-store" });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.record || data || null;
+    const tableId = getTableId("recruitment");
+    const record = await getRecord(tableId, id);
+    if (!record) return null;
+    return {
+      id: record.record_id,
+      ...transformGenericRecord(record, RECRUITMENT_FIELDS),
+    } as unknown as RecruitmentProgress;
   } catch {
     return null;
   }

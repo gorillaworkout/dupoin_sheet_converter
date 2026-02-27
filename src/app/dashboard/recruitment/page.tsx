@@ -1,15 +1,18 @@
 import type { RecruitmentProgress } from "@/types/hr";
 import { RecruitmentTable } from "./recruitment-table";
+import { getAllRecords, getTableId, transformGenericRecord } from "@/lib/lark";
+import { RECRUITMENT_FIELDS } from "@/lib/field-mappings";
 
 export const revalidate = 0;
 
 async function getRecruitment(): Promise<RecruitmentProgress[]> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-    const res = await fetch(`${baseUrl}/api/recruitment`, { cache: "no-store" });
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.records || data || [];
+    const tableId = getTableId("recruitment");
+    const records = await getAllRecords(tableId);
+    return records.map((record) => ({
+      id: record.record_id,
+      ...transformGenericRecord(record, RECRUITMENT_FIELDS),
+    })) as unknown as RecruitmentProgress[];
   } catch {
     return [];
   }

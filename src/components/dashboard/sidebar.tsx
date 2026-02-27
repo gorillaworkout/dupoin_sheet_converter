@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
-  Settings,
   ChevronLeft,
   ChevronRight,
   Zap,
@@ -17,6 +16,7 @@ import {
   LogIn,
   LogOut,
   GitBranch,
+  DollarSign,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -60,12 +60,12 @@ const navSections: NavSection[] = [
         icon: ClipboardList,
       },
       {
-        title: "Rekrutmen",
+        title: "Recruitment",
         href: "/dashboard/recruitment",
         icon: Search,
       },
       {
-        title: "Kandidat",
+        title: "Candidates",
         href: "/dashboard/candidates",
         icon: UserPlus,
       },
@@ -75,7 +75,7 @@ const navSections: NavSection[] = [
         icon: LogIn,
       },
       {
-        title: "Employee",
+        title: "Employees",
         href: "/dashboard/employees",
         icon: Users,
       },
@@ -87,11 +87,12 @@ const navSections: NavSection[] = [
     ],
   },
   {
+    label: "Finance",
     items: [
       {
-        title: "Pengaturan",
-        href: "/dashboard/settings",
-        icon: Settings,
+        title: "Xero Reports",
+        href: "/dashboard/xero",
+        icon: DollarSign,
       },
     ],
   },
@@ -200,7 +201,7 @@ export function Sidebar() {
           ) : (
             <>
               <ChevronLeft className="h-4 w-4 mr-2" />
-              <span className="text-xs">Kecilkan</span>
+              <span className="text-xs">Collapse</span>
             </>
           )}
         </Button>

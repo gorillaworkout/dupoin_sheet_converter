@@ -3,14 +3,18 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Candidate } from "@/types/hr";
 import { CandidateDetailClient } from "./candidate-detail-client";
+import { getRecord, getTableId, transformGenericRecord } from "@/lib/lark";
+import { CANDIDATE_FIELDS } from "@/lib/field-mappings";
 
 async function getCandidate(id: string): Promise<Candidate | null> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-    const res = await fetch(`${baseUrl}/api/candidates/${id}`, { cache: "no-store" });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.record || data || null;
+    const tableId = getTableId("candidate");
+    const record = await getRecord(tableId, id);
+    if (!record) return null;
+    return {
+      id: record.record_id,
+      ...transformGenericRecord(record, CANDIDATE_FIELDS),
+    } as unknown as Candidate;
   } catch {
     return null;
   }
