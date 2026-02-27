@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { ExternalLink, RefreshCw, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
+import { ExternalLink, RefreshCw, TrendingUp, TrendingDown, DollarSign, DatabaseBackup } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -172,6 +172,8 @@ export function XeroClient() {
   const [activeTab, setActiveTab] = useState<"balance" | "pnl">("balance");
   const [dateFrom, setDateFrom] = useState("2025-02-01");
   const [dateTo, setDateTo] = useState("2025-03-31");
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<string | null>(null);
 
   const checkStatus = useCallback(async () => {
     try {
@@ -204,6 +206,30 @@ export function XeroClient() {
       setError(e instanceof Error ? e.message : "Unknown error");
     } finally {
       setLoading(false);
+    }
+  }, [dateFrom, dateTo]);
+
+  const syncToDb = useCallback(async () => {
+    setSyncing(true);
+    setSyncResult(null);
+    try {
+      const res = await fetch("/api/xero/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fromDate: dateFrom, toDate: dateTo }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSyncResult(
+          `✅ Synced ${data.balanceSheet?.synced || 0} Balance Sheet rows & ${data.profitLoss?.synced || 0} P&L rows to database`
+        );
+      } else {
+        setSyncResult(`❌ ${data.error || "Sync failed"}`);
+      }
+    } catch (e) {
+      setSyncResult(`❌ ${e instanceof Error ? e.message : "Sync failed"}`);
+    } finally {
+      setSyncing(false);
     }
   }, [dateFrom, dateTo]);
 
@@ -311,22 +337,52 @@ export function XeroClient() {
           </button>
         </div>
 
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-2 border-white/10 text-zinc-400 hover:text-white"
-          onClick={fetchReports}
-          disabled={loading}
-        >
-          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 border-white/10 text-zinc-400 hover:text-white"
+            onClick={fetchReports}
+            disabled={loading}
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+          <Button
+            size="sm"
+            className="gap-2 bg-emerald-600 text-white hover:bg-emerald-700"
+            onClick={syncToDb}
+            disabled={syncing || loading}
+          >
+            <DatabaseBackup className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
+            {syncing ? "Syncing..." : "Sync to DB"}
+          </Button>
+        </div>
       </div>
 
       {/* Error */}
       {error && (
         <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-4">
           <p className="text-sm text-red-400">{error}</p>
+        </div>
+      )}
+
+      {/* Sync Result */}
+      {syncResult && (
+        <div
+          className={`rounded-lg border p-4 ${
+            syncResult.startsWith("✅")
+              ? "border-emerald-500/20 bg-emerald-500/5"
+              : "border-red-500/20 bg-red-500/5"
+          }`}
+        >
+          <p
+            className={`text-sm ${
+              syncResult.startsWith("✅") ? "text-emerald-400" : "text-red-400"
+            }`}
+          >
+            {syncResult}
+          </p>
         </div>
       )}
 

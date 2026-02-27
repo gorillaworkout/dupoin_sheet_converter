@@ -1,3 +1,0 @@
-# Template generation, do not manually modify
-#!/usr/bin/env sh
-npx --no-install lint-staged
