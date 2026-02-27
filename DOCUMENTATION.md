@@ -336,6 +336,138 @@ sudo nginx -t && sudo systemctl status nginx
 
 ---
 
+## 📖 Setup Guide — How to Get All Credentials
+
+### A. Lark App ID & App Secret
+
+1. Open **https://open.larksuite.com** and login with your admin account
+2. Click **"Create Custom App"** (or open an existing app)
+3. Fill in the app details:
+   - **App Name:** e.g. `Dupoin HR Dashboard`
+   - **Description:** e.g. `Internal HR management tool`
+4. After creating, you'll see:
+   - **App ID** → copy this (e.g. `cli_a91100da02b8de1a`)
+   - **App Secret** → click "Show" to reveal, then copy
+
+> 💡 **Feishu users:** use https://open.feishu.cn instead
+
+### B. Lark App Permissions
+
+Still in the same app on Lark Developer Console:
+
+1. Go to **"Permissions & Scopes"** in the left sidebar
+2. Search and enable these permissions:
+   - `bitable:app` — Read and write Base data
+   - `bitable:app:readonly` — Read Base data
+3. Click **"Save"**
+4. Go to **"Version Management"** → click **"Create Version"** → **"Publish"**
+5. Wait for admin approval (or self-approve if you're admin)
+
+> ⚠️ **Important:** After publishing, you must also **add the app as an editor** to your Lark Base:
+> 1. Open your Lark Base document
+> 2. Click **"Share"** (top right)
+> 3. Search for your app name (e.g. `Dupoin HR Dashboard`)
+> 4. Set permission to **"Can Edit"**
+> 5. Click **"Confirm"**
+
+### C. Lark Base App Token
+
+1. Open your **Lark Base** document in the browser
+2. Look at the URL in the address bar:
+   ```
+   https://your-company.larksuite.com/base/Dg3WbbHcPa5kmJseHoHjCGWMpC5
+                                            └──────────── This is your App Token ────────────┘
+   ```
+3. Copy the string after `/base/` — that's your `LARK_BASE_APP_TOKEN`
+
+### D. Lark Table IDs
+
+Each tab/table in your Lark Base has its own ID:
+
+1. Open your Lark Base document
+2. Click on a **table tab** (e.g. "Employee")
+3. Look at the URL — it will now include a `table` parameter:
+   ```
+   https://your-company.larksuite.com/base/Dg3WbbHcPa5km...?table=tblCjXA8BJsLq6uG
+                                                                   └── Table ID ──┘
+   ```
+4. Copy the `table=tblXXXX` value — that's the Table ID
+5. **Repeat for each table:**
+
+| Tab Name | ENV Variable | Example Table ID |
+|----------|-------------|-----------------|
+| Employee | `LARK_TABLE_EMPLOYEE` | `tblCjXA8BJsLq6uG` |
+| Manpower | `LARK_TABLE_MANPOWER` | `tbl7xBEUnERcmVrg` |
+| Recruitment | `LARK_TABLE_RECRUITMENT` | `tblXuYd2kC3RvSaB` |
+| Candidate | `LARK_TABLE_CANDIDATE` | `tblU5lxajR8BeN05` |
+| Onboarding | `LARK_TABLE_ONBOARDING` | `tbl0FrUUTLbd0iiz` |
+| Offboarding | `LARK_TABLE_OFFBOARDING` | `tblX7yHGGie6annA` |
+
+> 💡 **Quick shortcut:** Right-click a table tab → **"Copy link"** → paste somewhere → extract the `table=tblXXX` value from the URL.
+
+### E. Xero Client ID & Client Secret
+
+1. Go to **https://developer.xero.com/app/manage**
+2. Login with your Xero account
+3. Click **"New app"** (or open existing app):
+   - **App name:** e.g. `Dupoin Dashboard`
+   - **Integration type:** Web app
+   - **Company or application URL:** `https://hr-app.gorillaworkout.id`
+   - **Redirect URI:** `https://hr-app.gorillaworkout.id/api/xero/callback`
+4. After creating, you'll see:
+   - **Client ID** → copy this
+   - **Client Secret** → click "Generate a secret", then copy immediately (shown only once!)
+
+> ⚠️ **Critical:** The **Redirect URI** must exactly match `XERO_REDIRECT_URI` in your `.env` file, including the protocol (`https://`) and path (`/api/xero/callback`). Any mismatch will cause OAuth to fail.
+
+### F. Setting Up `.env.local` for Local Development
+
+Create a `.env.local` file in the project root:
+
+```bash
+# Lark Configuration
+LARK_APP_ID=cli_a91100da02b8de1a
+LARK_APP_SECRET=your_app_secret_here
+LARK_BASE_APP_TOKEN=Dg3WbbHcPa5kmJseHoHjCGWMpC5
+LARK_TABLE_EMPLOYEE=tblCjXA8BJsLq6uG
+LARK_TABLE_MANPOWER=tbl7xBEUnERcmVrg
+LARK_TABLE_RECRUITMENT=tblXuYd2kC3RvSaB
+LARK_TABLE_CANDIDATE=tblU5lxajR8BeN05
+LARK_TABLE_ONBOARDING=tbl0FrUUTLbd0iiz
+LARK_TABLE_OFFBOARDING=tblX7yHGGie6annA
+
+# Xero Configuration
+XERO_CLIENT_ID=your_xero_client_id
+XERO_CLIENT_SECRET=your_xero_client_secret
+XERO_REDIRECT_URI=http://localhost:3000/api/xero/callback
+NEXT_PUBLIC_BASE_URL=http://localhost:3000
+
+# Database (optional for local — only needed for Xero token storage)
+DATABASE_URL=postgresql://dupoin:dupoin2026secure@localhost:5432/dupoin_hr
+```
+
+> 📝 **Note:** For local dev, change `XERO_REDIRECT_URI` and `NEXT_PUBLIC_BASE_URL` to `http://localhost:3000`. Update them back to the production domain when deploying.
+
+### G. Quick Start (After Getting All Credentials)
+
+```bash
+# 1. Clone the repo
+git clone https://github.com/gorillaworkout/dupoin_sheet_converter.git
+cd dupoin_sheet_converter
+
+# 2. Create .env.local with your credentials (see section F above)
+
+# 3. Install dependencies
+npm install
+
+# 4. Run development server
+npm run dev
+
+# 5. Open http://localhost:3000 in your browser
+```
+
+---
+
 ## 🔧 Environment Variables
 
 | Variable | Value | Description |
