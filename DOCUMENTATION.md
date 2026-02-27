@@ -264,6 +264,263 @@ All HR routes follow the same pattern: API route → `lark.ts` → Lark Base API
 
 ---
 
+## 🔍 How The Code Works — Step by Step
+
+This section explains how each part of the codebase works, from Lark API authentication to data rendering on each page.
+
+### 1. Lark API Authentication (`src/lib/lark.ts`)
+
+Every request to Lark Base needs a **Tenant Access Token**. Here's how it works:
+
+```
+Your App (Server)                          Lark API
+      │                                       │
+      │  POST /auth/v3/tenant_access_token    │
+      │  Body: { app_id, app_secret }         │
+      │──────────────────────────────────────→ │
+      │                                       │
+      │  Response: { tenant_access_token,     │
+      │              expire: 7200 }           │
+      │←────────────────────────────────────── │
+      │                                       │
+      │  (Token cached in memory for ~2 hrs)  │
+```
+
+**Key function:** `getTenantToken()`
+- Sends `app_id` + `app_secret` to Lark → gets back a token valid for ~2 hours
+- Token is **cached in memory** — subsequent calls reuse it until it expires
+- Auto-refreshes when expired (no manual intervention needed)
+
+### 2. How Table Data is Fetched
+
+Every table (Employee, Manpower, etc.) follows the same pattern:
+
+```
+Dashboard Page (Server Component)
+      │
+      │ 1. getTableId("employee")
+      │    → reads LARK_TABLE_EMPLOYEE from .env
+      │    → returns "tblCjXA8BJsLq6uG"
+      │
+      │ 2. getAllRecords(tableId)
+      │    → calls Lark API: GET /bitable/v1/apps/{base}/tables/{table}/records
+      │    → automatically paginates (100 records per page)
+      │    → returns raw Lark records: [{ record_id, fields: { "Full Name": [...], ... } }]
+      │
+      │ 3. transformRecord(record) or transformGenericRecord(record, FIELD_MAPPINGS)
+      │    → maps Lark field names to clean keys
+      │    → e.g. "Full Name" → "full_name", "Date of Joining" → formatted date
+      │    → handles complex Lark field types (formula, lookup, linked records)
+      │
+      │ 4. Passes clean data to Client Component (Table)
+      │    → renders in browser with search, sort, pagination
+```
+
+### 3. Field Mapping System (`src/lib/field-mappings.ts`)
+
+Lark stores fields with human-readable names like `"Full Name"`, `"Date of Joining"`. The app maps these to clean camelCase keys:
+
+```typescript
+// Example: Employee field mapping
+{ larkField: "Full Name",        ourField: "full_name" }
+{ larkField: "Date of Joining",  ourField: "date_of_joining", isDate: true }
+{ larkField: "Primary Department", ourField: "primary_department" }
+```
+
+**Each table has its own field mapping array:**
+
+| Table | Mapping Array | File |
+|-------|--------------|------|
+| Employee | `EMPLOYEE_FIELDS` | `field-mappings.ts` |
+| Manpower | `MANPOWER_FIELDS` | `field-mappings.ts` |
+| Recruitment | `RECRUITMENT_FIELDS` | `field-mappings.ts` |
+| Candidate | `CANDIDATE_FIELDS` | `field-mappings.ts` |
+| Onboarding | `ONBOARDING_FIELDS` | `field-mappings.ts` |
+| Offboarding | `OFFBOARDING_FIELDS` | `field-mappings.ts` |
+
+**How to add a new field:**
+1. Check the field name in Lark Base (exact spelling matters!)
+2. Add a new entry to the mapping array:
+   ```typescript
+   { larkField: "Exact Lark Field Name", ourField: "your_clean_key" }
+   // For date fields:
+   { larkField: "Start Date", ourField: "startDate", isDate: true }
+   ```
+
+### 4. Lark Field Value Types
+
+Lark returns different data structures depending on the field type. The `normalizeFieldValue()` function handles all of them:
+
+| Lark Field Type | Raw Value Example | Normalized Output |
+|----------------|-------------------|-------------------|
+| Text | `"John Doe"` | `"John Doe"` |
+| Number | `42` | `"42"` |
+| Checkbox | `true` | `"Yes"` |
+| Date/Timestamp | `1700000000` | `"2023-11-14"` (via `formatTimestamp`) |
+| Formula/Lookup | `[{ text: "Result", type: 0 }]` | `"Result"` |
+| Linked Record | `[{ text_arr: ["HR", "Finance"] }]` | `"HR, Finance"` |
+| URL | `{ link: "https://...", text: "Click" }` | `"Click"` |
+| Person/User | `{ name: "Admin", id: "123" }` | `"Admin"` |
+
+### 5. CRUD Operations (Create, Read, Update, Delete)
+
+All 6 tables support full CRUD via API routes:
+
+```
+CREATE (POST /api/employees)
+  1. Frontend sends: { full_name: "John", company: "Dupoin", ... }
+  2. API route calls reverseTransform(body, EMPLOYEE_FIELDS)
+     → converts { full_name: "John" } back to { "Full Name": "John" }
+  3. Calls createRecord(tableId, larkFields)
+     → POST to Lark API → creates record in Lark Base
+  4. Returns { record_id: "recXXXX" }
+
+READ (GET /api/employees)
+  1. Calls getAllRecords(tableId) → fetches all records from Lark
+  2. Maps each record through transformRecord() → clean data
+  3. Returns { employees: [...], total: 483, active_count: 400 }
+
+UPDATE (PUT /api/employees/[id])
+  1. Frontend sends: { full_name: "John Updated", ... }
+  2. reverseTransform → converts back to Lark field names
+  3. updateRecord(tableId, recordId, fields) → PUT to Lark API
+
+DELETE (DELETE /api/employees/[id])
+  1. deleteRecord(tableId, recordId) → DELETE to Lark API
+```
+
+### 6. Each Dashboard Page Explained
+
+#### `/dashboard` — Overview (Spreadsheet Upload)
+- **Type:** Client Component (`"use client"`)
+- **What it does:** Upload `.xlsx`/`.csv` files, edit data in browser, save back
+- **Components:** `FileUpload` → parses file → `SheetEditor` → editable spreadsheet grid
+- **Data source:** Local file (no Lark API)
+
+#### `/dashboard/employees` — Employee Management
+- **Type:** Server Component (data fetched on server)
+- **What it does:** Shows all 483 employees from Lark Base
+- **Data flow:**
+  1. `page.tsx`: calls `getAllRecords()` → `transformRecord()` on server
+  2. Passes `employees[]` to `EmployeeTable` (client component)
+  3. Table supports: search, column sorting, pagination, add/edit/delete
+- **Detail page:** `/dashboard/employees/[id]` → fetches single record by `record_id`
+
+#### `/dashboard/manpower` — Manpower Requests
+- **Type:** Server Component
+- **What it does:** Shows manpower/headcount requests (new hires needed)
+- **Data flow:**
+  1. `getTableId("manpower")` → `tbl7xBEUnERcmVrg`
+  2. `getAllRecords(tableId)` → `transformGenericRecord(record, MANPOWER_FIELDS)`
+  3. Renders in `ManpowerTable` with fields: Request No, Status, Department, Position, etc.
+
+#### `/dashboard/recruitment` — Recruitment Tracking
+- **Type:** Server Component
+- **What it does:** Tracks recruitment progress per position
+- **Key fields:** Recruitment ID, Status, Candidate Name, Hiring Manager, Head Count
+- **Data source:** `LARK_TABLE_RECRUITMENT` → `tblXuYd2kC3RvSaB`
+
+#### `/dashboard/candidates` — Candidate Management
+- **Type:** Server Component
+- **What it does:** Manages candidate profiles and evaluations
+- **Key fields:** Candidate ID, Name, Position Applied, Interview Progress, Resume Evaluation, Status
+- **Data source:** `LARK_TABLE_CANDIDATE` → `tblU5lxajR8BeN05`
+
+#### `/dashboard/onboarding` — New Hire Onboarding
+- **Type:** Server Component
+- **What it does:** Checklist for new hire onboarding process
+- **Key fields:** Full Name, Commencement Date, Offer Letter, Pre-employment, Lark Account, Email Creation, Probation dates
+- **Data source:** `LARK_TABLE_ONBOARDING` → `tbl0FrUUTLbd0iiz`
+
+#### `/dashboard/offboarding` — Employee Exit Process
+- **Type:** Server Component
+- **What it does:** Tracks employee exit/offboarding process
+- **Key fields:** Full Name, Last Working Day, Exit Interview, Handover Form, Asset Return
+- **Data source:** `LARK_TABLE_OFFBOARDING` → `tblX7yHGGie6annA`
+
+#### `/dashboard/hr` — HR Pipeline Overview
+- **Type:** Server Component
+- **What it does:** Aggregated view of the entire HR pipeline across all 6 tables
+- **Data flow:**
+  1. Fetches ALL 6 tables in **parallel** using `Promise.all()`
+  2. Counts records by status (active, pending, completed, etc.)
+  3. Shows summary cards: total employees, active, pending manpower, etc.
+- **This is the same logic as `/api/pipeline`**
+
+#### `/dashboard/xero` — Financial Reports
+- **Type:** Client Component
+- **What it does:** Shows Xero Balance Sheet + Profit & Loss reports
+- **Data flow:**
+  1. Checks Xero connection status → `GET /api/xero/status`
+  2. If not connected → shows "Connect Xero" button → OAuth flow
+  3. If connected → fetches reports with date range picker
+  4. Balance Sheet: `GET /api/xero/balance-sheet?date=2025-03-31`
+  5. Profit & Loss: `GET /api/xero/profit-loss?from=2025-02-01&to=2025-03-31`
+  6. "Sync to DB" button → `POST /api/xero/sync` → saves to PostgreSQL
+
+### 7. Xero OAuth Flow Explained
+
+```
+User clicks "Connect Xero"
+      │
+      ▼
+POST /api/xero/init
+      │ → generates auth URL with client_id + scopes
+      │ → redirects user to Xero login page
+      ▼
+User logs in at login.xero.com
+      │ → authorizes the app
+      │ → Xero redirects to:
+      ▼
+GET /api/xero/callback?code=XXXX
+      │ → exchanges code for access_token + refresh_token
+      │ → saves tokens to PostgreSQL (xero_tokens table)
+      │ → fetches tenant_id from Xero connections
+      │ → redirects to /dashboard/xero
+      ▼
+Dashboard shows financial data
+      │ → uses access_token for API calls
+      │ → auto-refreshes when token expires (every 30 min)
+      │ → ⚠️ refresh tokens are SINGLE-USE (each refresh gives new one)
+```
+
+### 8. How to Add a New Lark Table
+
+If you need to add a new table (e.g. "Training"):
+
+**Step 1:** Create the table in Lark Base, note the Table ID from URL
+
+**Step 2:** Add env var:
+```bash
+LARK_TABLE_TRAINING=tblNewTableId
+```
+
+**Step 3:** Add to `TABLE_ENV_MAP` in `src/lib/lark.ts`:
+```typescript
+const TABLE_ENV_MAP: Record<string, string> = {
+  // ... existing tables
+  training: "LARK_TABLE_TRAINING",
+};
+```
+
+**Step 4:** Add field mappings in `src/lib/field-mappings.ts`:
+```typescript
+export const TRAINING_FIELDS: FieldMapping[] = [
+  { larkField: "Training ID", ourField: "trainingId" },
+  { larkField: "Training Name", ourField: "trainingName" },
+  { larkField: "Date", ourField: "date", isDate: true },
+  // ... add all fields you need
+];
+```
+
+**Step 5:** Create API route `src/app/api/training/route.ts` (copy from manpower)
+
+**Step 6:** Create dashboard page `src/app/dashboard/training/page.tsx` (copy from manpower)
+
+**Step 7:** Add to sidebar navigation in `src/components/dashboard/sidebar.tsx`
+
+---
+
 ## 🐳 Deployment
 
 ### Docker Setup
